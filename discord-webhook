@@ -1,0 +1,58 @@
+#!/bin/bash
+
+version="1.0.0"
+argc="$#"
+argv=("$@")
+
+usage() {
+    echo "Version $version"
+    echo "Usage:"
+    echo "    $0 -w <webhook> -m <message> [-u <username>] [-a <avatar>]"
+    echo "Arguments:"
+    echo "    -w|--webhook     Discord webhook URL"
+    echo "    -m|--message     Message text to send"
+    echo "    -u|--username    Username override"
+    echo "    -a|--avatar      Avatar image URL"
+}
+
+if [ $argc -eq 0 ]; then
+    usage
+    exit 1
+fi
+
+for (( i=0; $i < $argc; i++ )); do
+    case "${argv[$i]}" in
+        -h|--help)
+            usage && exit 1
+            ;;
+        -w|--webhook)
+            ((i++))
+            webhook="${argv[$i]}"
+            [ -z "$webhook" ] && usage && exit 1
+            ;;
+        -m|--message)
+            ((i++))
+            message="${argv[$i]}"
+            [ -z "$message" ] && usage && exit 1
+            message="${message//\\/\\\\}"
+            message="${message//\"/\\\"}"
+            ;;
+        -u|--username)
+            ((i++))
+            username="${argv[$i]}"
+            [ -z "$username" ] && usage && exit 1
+            ;;
+        -a|--avatar)
+            ((i++))
+            avatar="${argv[$i]}"
+            [ -z "$avatar" ] && usage && exit 1
+            ;;
+    esac
+done
+
+json="{\"content\":\"$message\""
+[ -n "$username" ] && json+=",\"username\":\"$username\""
+[ -n "$avatar" ] && json+=",\"avatar_url\":\"$avatar\""
+json+="}"
+
+curl --header 'Content-Type: application/json' --request POST --data "$json" "$webhook"
